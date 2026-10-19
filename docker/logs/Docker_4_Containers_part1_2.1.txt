@@ -1,0 +1,135 @@
+
+===== Завдання 1. Перший запуск і стан контейнера =====
+$ docker run --name first-hello hello-world | head -3
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+$ docker ps
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+
+$ docker ps -a
+CONTAINER ID   IMAGE         COMMAND    CREATED                  STATUS                              PORTS     NAMES
+6eef568842be   hello-world   "/hello"   Less than a second ago   Exited (0) Less than a second ago             first-hello
+50bd68ec0fa5   hello-world   "/hello"   12 seconds ago           Exited (0) 12 seconds ago                     hardcore_aryabhata
+
+$ docker inspect -f 'Статус: {{.State.Status}}, код виходу: {{.State.ExitCode}}' first-hello
+Статус: exited, код виходу: 0
+
+$ docker rm first-hello
+first-hello
+
+$ docker ps -a
+CONTAINER ID   IMAGE         COMMAND    CREATED          STATUS                      PORTS     NAMES
+50bd68ec0fa5   hello-world   "/hello"   13 seconds ago   Exited (0) 13 seconds ago             hardcore_aryabhata
+
+
+===== Завдання 2. Фоновий режим і логи =====
+$ docker run -d --name bg-alpine alpine sh -c 'i=0; while true; do echo "message $i"; i=$((i+1)); sleep 1; done'
+Unable to find image 'alpine:latest' locally
+latest: Pulling from library/alpine
+e2de96513ba9: Pulling fs layer
+e2de96513ba9: Download complete
+e2de96513ba9: Pull complete
+6d0606d1815c: Download complete
+797dd00a0fc7: Download complete
+Digest: sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+Status: Downloaded newer image for alpine:latest
+eab7383b868a55859bddd666515c376ca2bfda517adb5079d7620e03807d26da
+
+$ docker ps
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS     NAMES
+eab7383b868a   alpine    "sh -c 'i=0; while t…"   5 seconds ago   Up 4 seconds             bg-alpine
+
+$ docker logs bg-alpine
+message 0
+message 1
+message 2
+message 3
+message 4
+
+$ docker stop bg-alpine
+bg-alpine
+
+$ docker ps -a --filter name=bg-alpine
+CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS                                PORTS     NAMES
+eab7383b868a   alpine    "sh -c 'i=0; while t…"   16 seconds ago   Exited (137) Less than a second ago             bg-alpine
+
+$ docker rm bg-alpine
+bg-alpine
+
+$ docker ps -a
+CONTAINER ID   IMAGE         COMMAND    CREATED          STATUS                      PORTS     NAMES
+50bd68ec0fa5   hello-world   "/hello"   32 seconds ago   Exited (0) 32 seconds ago             hardcore_aryabhata
+
+
+===== Завдання 3. docker exec і життєвий цикл =====
+$ docker run -d --name web-nginx nginx:alpine
+Unable to find image 'nginx:alpine' locally
+alpine: Pulling from library/nginx
+e72112c14215: Pulling fs layer
+64c8194480fe: Pulling fs layer
+e76228b47809: Pulling fs layer
+9a9a644fdd6a: Pulling fs layer
+745dfb2690dd: Pulling fs layer
+d9aae54b5831: Pulling fs layer
+6c53d0b2a666: Pulling fs layer
+e76228b47809: Download complete
+64c8194480fe: Download complete
+9a9a644fdd6a: Download complete
+745dfb2690dd: Download complete
+6c53d0b2a666: Download complete
+0deea27e58d9: Download complete
+d9aae54b5831: Download complete
+e72112c14215: Download complete
+e76228b47809: Pull complete
+64c8194480fe: Pull complete
+9a9a644fdd6a: Pull complete
+745dfb2690dd: Pull complete
+6c53d0b2a666: Pull complete
+d9aae54b5831: Pull complete
+d54d3939625e: Download complete
+e72112c14215: Pull complete
+Digest: sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
+Status: Downloaded newer image for nginx:alpine
+fa969f1531cdabb46cb4ca562a22fe0c8eef95c7643edd2d542dbdea3cd91622
+
+$ docker exec web-nginx nginx -v
+nginx version: nginx/1.31.6
+
+$ docker exec web-nginx ls /usr/share/nginx/html
+50x.html
+index.html
+
+$ docker exec web-nginx cat /etc/os-release | head -2
+NAME="Alpine Linux"
+ID=alpine
+
+$ docker restart web-nginx
+web-nginx
+
+$ docker ps --filter name=web-nginx
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS                  PORTS     NAMES
+fa969f1531cd   nginx:alpine   "/docker-entrypoint.…"   2 seconds ago   Up Less than a second   80/tcp    web-nginx
+
+$ docker stop web-nginx
+web-nginx
+
+$ docker ps -a --filter name=web-nginx
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS                              PORTS     NAMES
+fa969f1531cd   nginx:alpine   "/docker-entrypoint.…"   3 seconds ago   Exited (0) Less than a second ago             web-nginx
+
+$ docker start web-nginx
+web-nginx
+
+$ docker ps --filter name=web-nginx
+CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS                  PORTS     NAMES
+fa969f1531cd   nginx:alpine   "/docker-entrypoint.…"   3 seconds ago   Up Less than a second   80/tcp    web-nginx
+
+$ docker rm -f web-nginx
+web-nginx
+
+$ docker ps -a
+CONTAINER ID   IMAGE         COMMAND    CREATED          STATUS                      PORTS     NAMES
+50bd68ec0fa5   hello-world   "/hello"   40 seconds ago   Exited (0) 40 seconds ago             hardcore_aryabhata
+

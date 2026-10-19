@@ -1,0 +1,225 @@
+
+===== Завдання 1. Структура проєкту ProductManagement.API =====
+$ find . -path ./obj -prune -o -path ./bin -prune -o -type f \( -name '*.cs' -o -name '*.json' -o -name '*.csproj' \) -print | sort
+./Controllers/ClientsController.cs
+./Controllers/DbCheckController.cs
+./Controllers/ProductsController.cs
+./DTOs/ClientDtos.cs
+./DTOs/ProductDtos.cs
+./Data/AppDbContext.cs
+./Migrations/20261014155658_InitialCreate.Designer.cs
+./Migrations/20261014155658_InitialCreate.cs
+./Migrations/AppDbContextModelSnapshot.cs
+./Models/Client.cs
+./Models/Product.cs
+./ProductManagement.API.csproj
+./Profiles/MappingProfile.cs
+./Program.cs
+./Properties/launchSettings.json
+./appsettings.Development.json
+./appsettings.json
+
+$ grep -n DefaultConnection appsettings.json
+3:    "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=ProductManagementDb;Trusted_Connection=True;TrustServerCertificate=True;"
+
+$ dotnet build 2>&1 | tail -4
+    6 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:06.32
+
+
+===== Завдання 2. Пакети EF Core, DbContext, реєстрація в Program.cs =====
+$ grep -n PackageReference ProductManagement.API.csproj
+10:    <PackageReference Include="AutoMapper" Version="14.0.0" />
+11:    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+12:    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+15:    </PackageReference>
+16:    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.0" />
+
+$ cat Data/AppDbContext.cs
+using Microsoft.EntityFrameworkCore;
+using ProductManagement.API.Models;
+
+namespace ProductManagement.API.Data;
+
+public class AppDbContext : DbContext
+{
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    {
+    }
+
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<Client> Clients => Set<Client>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Product>(e =>
+        {
+            e.Property(p => p.Name).HasMaxLength(200).IsRequired();
+            e.Property(p => p.Price).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<Client>(e =>
+        {
+            e.Property(c => c.FirstName).HasMaxLength(100).IsRequired();
+            e.Property(c => c.LastName).HasMaxLength(100).IsRequired();
+            e.Property(c => c.Email).HasMaxLength(200).IsRequired();
+            e.Property(c => c.Phone).HasMaxLength(30);
+        });
+    }
+}
+
+$ grep -n 'AddDbContext' -A2 Program.cs
+10:builder.Services.AddDbContext<AppDbContext>(options =>
+11-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+12-
+
+
+===== SQL Server (контейнер, у WSL немає LocalDB) =====
+$ docker run -d --name sqlserver -e ACCEPT_EULA=Y -e MSSQL_SA_PASSWORD=<password> -p 1433:1433 mcr.microsoft.com/mssql/server:2022-latest
+c01e51fa6a978df9864860f5ad5b1602027fe3758e7d56443cd2851d39ce780a
+
+$ docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P <password> -Q "select @@version" -h -1 | head -2
+Microsoft SQL Server 2022 (RTM-CU27-GDR) (KB5126934) - 16.0.4305.5 (X64) 
+	Oct  2 2026 17:28:11 
+
+
+===== Завдання 3. Міграції =====
+$ /root/.dotnet/tools/dotnet-ef migrations list --no-build 2>&1 | grep -v 'tools version'
+20261014155658_InitialCreate (Pending)
+
+$ /root/.dotnet/tools/dotnet-ef database update 2>&1 | grep -v 'tools version' | tail -8
+      INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+      VALUES (N'20261014155658_InitialCreate', N'10.0.0');
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      DECLARE @result int;
+      EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+      SELECT @result
+Done.
+
+$ docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P <password> -Q "select name from sys.databases"
+name                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------
+master                                                                                                                          
+tempdb                                                                                                                          
+model                                                                                                                           
+msdb                                                                                                                            
+ProductManagementDb                                                                                                             
+
+(5 rows affected)
+
+$ docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P <password> -d ProductManagementDb -Q "select TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME in ('Products','Clients') order by TABLE_NAME, ORDINAL_POSITION" -W
+TABLE_NAME COLUMN_NAME DATA_TYPE IS_NULLABLE
+---------- ----------- --------- -----------
+Clients Id int NO
+Clients FirstName nvarchar NO
+Clients LastName nvarchar NO
+Clients Email nvarchar NO
+Clients Phone nvarchar NO
+Products Id int NO
+Products Name nvarchar NO
+Products Description nvarchar YES
+Products Price decimal NO
+Products Stock int NO
+
+(10 rows affected)
+
+
+===== Відкат міграції і повернення до актуального стану =====
+$ /root/.dotnet/tools/dotnet-ef database update 0 2>&1 | grep -v 'tools version' | tail -3
+      EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+      SELECT @result
+Done.
+
+$ docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P <password> -d ProductManagementDb -Q "select TABLE_NAME from INFORMATION_SCHEMA.TABLES" -W
+TABLE_NAME
+----------
+__EFMigrationsHistory
+
+(1 rows affected)
+
+$ /root/.dotnet/tools/dotnet-ef database update 2>&1 | grep -v 'tools version' | tail -3
+      EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+      SELECT @result
+Done.
+
+$ docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P <password> -d ProductManagementDb -Q "select TABLE_NAME from INFORMATION_SCHEMA.TABLES" -W
+TABLE_NAME
+----------
+__EFMigrationsHistory
+Clients
+Products
+
+(3 rows affected)
+
+
+===== Запуск API =====
+
+===== Завдання 4. Контролер перевірки підключення до БД =====
+$ cat Controllers/DbCheckController.cs
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ProductManagement.API.Data;
+
+namespace ProductManagement.API.Controllers;
+
+/// <summary>Перевірка підключення до бази даних.</summary>
+[ApiController]
+[Route("api/[controller]")]
+public class DbCheckController : ControllerBase
+{
+    private readonly AppDbContext _db;
+
+    public DbCheckController(AppDbContext db) => _db = db;
+
+    [HttpGet]
+    public async Task<IActionResult> Check()
+    {
+        var canConnect = await _db.Database.CanConnectAsync();
+        return canConnect
+            ? Ok(new { status = "Connected", database = _db.Database.GetDbConnection().Database })
+            : StatusCode(503, new { status = "Unavailable" });
+    }
+}
+
+$ curl -s -i http://localhost:5300/api/dbcheck
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+Date: Wed, 14 Oct 2026 16:00:08 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+
+{"status":"Connected","database":"ProductManagementDb"}
+
+===== Завдання 5. Ендпоінти клієнтів =====
+$ curl -s http://localhost:5300/api/clients
+[]
+$ curl -s -i -X POST http://localhost:5300/api/clients -H 'Content-Type: application/json' -d '{"firstName":"Ivan","lastName":"Petrenko","email":"ivan@example.com","phone":"+380501112233"}'
+HTTP/1.1 201 Created
+Content-Type: application/json; charset=utf-8
+Date: Wed, 14 Oct 2026 16:00:09 GMT
+Server: Kestrel
+Location: http://localhost:5300/api/Clients/1
+Transfer-Encoding: chunked
+
+{"id":1,"firstName":"Ivan","lastName":"Petrenko","email":"ivan@example.com"}
+$ curl -s http://localhost:5300/api/clients
+[{"id":1,"firstName":"Ivan","lastName":"Petrenko","email":"ivan@example.com"}]
+$ docker exec sqlserver /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P <password> -d ProductManagementDb -Q "select * from Clients" -W
+Id FirstName LastName Email Phone
+-- --------- -------- ----- -----
+1 Ivan Petrenko ivan@example.com +380501112233
+
+(1 rows affected)
+
+$ curl -s -i -X POST http://localhost:5300/api/clients -H 'Content-Type: application/json' -d '{"firstName":"","email":"bad"}' | head -12
+HTTP/1.1 400 Bad Request
+Content-Type: application/problem+json; charset=utf-8
+Date: Wed, 14 Oct 2026 16:00:09 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+
+{"type":"https://tools.ietf.org/html/rfc9110#section-15.5.1","title":"One or more validation errors occurred.","status":400,"errors":{"Email":["The Email field is not a valid e-mail address."],"LastName":["The LastName field is required."],"FirstName":["The FirstName field is required."]},"traceId":"00-f5373dbabd31670e2aad3172877c429e-4b0c9c5cd6d72193-00"}
+SERVER_UP

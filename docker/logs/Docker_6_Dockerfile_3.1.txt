@@ -1,0 +1,221 @@
+
+===== Завдання 1. Статичний сайт (nginx:alpine) =====
+$ find static_site_app -type f | sort
+static_site_app/Dockerfile
+static_site_app/about.html
+static_site_app/index.html
+
+$ cat static_site_app/index.html
+<!DOCTYPE html>
+<html lang="uk">
+<head><meta charset="UTF-8"><title>Мій статичний сайт</title></head>
+<body>
+  <h1>Мій статичний сайт у Docker</h1>
+  <p>Це простий сайт, який віддає nginx з Docker-контейнера.</p>
+  <a href="about.html">Про автора</a>
+</body>
+</html>
+
+$ cat static_site_app/about.html
+<!DOCTYPE html>
+<html lang="uk">
+<head><meta charset="UTF-8"><title>Про автора</title></head>
+<body>
+  <h1>Про автора</h1>
+  <p>Ноцколіні Рафаїл Львович, студент курсу розробки веб-додатків.</p>
+  <a href="index.html">На головну</a>
+</body>
+</html>
+
+$ cat static_site_app/Dockerfile
+FROM nginx:alpine
+WORKDIR /usr/share/nginx/html
+COPY index.html about.html ./
+EXPOSE 80
+
+$ docker build -t static-site-image static_site_app
+DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
+            Install the buildx component to build images with BuildKit:
+            https://docs.docker.com/go/buildx/
+
+Sending build context to Docker daemon  4.096kB
+Step 1/4 : FROM nginx:alpine
+alpine: Pulling from library/nginx
+e72112c14215: Pulling fs layer
+745dfb2690dd: Pulling fs layer
+64c8194480fe: Pulling fs layer
+d9aae54b5831: Pulling fs layer
+9a9a644fdd6a: Pulling fs layer
+e76228b47809: Pulling fs layer
+6c53d0b2a666: Pulling fs layer
+6c53d0b2a666: Download complete
+745dfb2690dd: Download complete
+9a9a644fdd6a: Download complete
+e76228b47809: Download complete
+64c8194480fe: Download complete
+d9aae54b5831: Download complete
+6c53d0b2a666: Pull complete
+745dfb2690dd: Pull complete
+9a9a644fdd6a: Pull complete
+d9aae54b5831: Pull complete
+0deea27e58d9: Download complete
+e76228b47809: Pull complete
+64c8194480fe: Pull complete
+d54d3939625e: Download complete
+e72112c14215: Download complete
+e72112c14215: Pull complete
+Digest: sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
+Status: Downloaded newer image for nginx:alpine
+ ---> df221db836e1
+Step 2/4 : WORKDIR /usr/share/nginx/html
+ ---> Running in d7db4a5e7c4d
+ ---> Removed intermediate container d7db4a5e7c4d
+ ---> 8e532bf6940a
+Step 3/4 : COPY index.html about.html ./
+ ---> b2e91114b5b7
+Step 4/4 : EXPOSE 80
+ ---> Running in 1cf64d7bc4a6
+ ---> Removed intermediate container 1cf64d7bc4a6
+ ---> 9be6af113bf3
+Successfully built 9be6af113bf3
+Successfully tagged static-site-image:latest
+
+$ docker run -d --name static-site-container -p 8080:80 static-site-image
+a4669d5182e131b44630ecaa070ce55f3ec8ace3b52c2233dcb79c5089b0d3cd
+
+$ docker ps --filter name=static-site-container
+CONTAINER ID   IMAGE               COMMAND                  CREATED         STATUS         PORTS                                     NAMES
+a4669d5182e1   static-site-image   "/docker-entrypoint.…"   3 seconds ago   Up 2 seconds   0.0.0.0:8080->80/tcp, [::]:8080->80/tcp   static-site-container
+
+$ curl -s http://localhost:8080/index.html
+<!DOCTYPE html>
+<html lang="uk">
+<head><meta charset="UTF-8"><title>Мій статичний сайт</title></head>
+<body>
+  <h1>Мій статичний сайт у Docker</h1>
+  <p>Це простий сайт, який віддає nginx з Docker-контейнера.</p>
+  <a href="about.html">Про автора</a>
+</body>
+</html>
+
+$ curl -s http://localhost:8080/about.html
+<!DOCTYPE html>
+<html lang="uk">
+<head><meta charset="UTF-8"><title>Про автора</title></head>
+<body>
+  <h1>Про автора</h1>
+  <p>Ноцколіні Рафаїл Львович, студент курсу розробки веб-додатків.</p>
+  <a href="index.html">На головну</a>
+</body>
+</html>
+
+
+===== Завдання 2. Node.js HTTP-додаток =====
+$ find node_http_app -type f | sort
+node_http_app/Dockerfile
+node_http_app/app.js
+node_http_app/package.json
+
+$ cat node_http_app/app.js
+const express = require('express');
+const app = express();
+
+app.get('/', (req, res) => res.send('Hello from Docker!'));
+app.get('/animal', (req, res) => res.send('Elephant'));
+
+app.listen(3000, () => console.log('Server is running on port 3000'));
+
+$ cat node_http_app/Dockerfile
+FROM node:alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 3000
+CMD ["node", "app.js"]
+
+$ docker build -t node-http-app-image node_http_app 2>&1 | tail -15
+npm notice
+[0m ---> Removed intermediate container dbcb04305a38
+ ---> face8a819673
+Step 5/7 : COPY . .
+ ---> 7cf2ac998e19
+Step 6/7 : EXPOSE 3000
+ ---> Running in 0de0a5708e2b
+ ---> Removed intermediate container 0de0a5708e2b
+ ---> 75a57de1778c
+Step 7/7 : CMD ["node", "app.js"]
+ ---> Running in 07f6d3f68ad4
+ ---> Removed intermediate container 07f6d3f68ad4
+ ---> 4d0d6fbafb89
+Successfully built 4d0d6fbafb89
+Successfully tagged node-http-app-image:latest
+
+$ docker run -d --name node-http-app-container -p 3000:3000 node-http-app-image
+1f4e4207d2f610e12ecf68dee10bc39d57c8b4204f76de3e972b1bca595065ff
+
+$ docker ps --filter name=node-http-app-container
+CONTAINER ID   IMAGE                 COMMAND                  CREATED         STATUS         PORTS                                         NAMES
+1f4e4207d2f6   node-http-app-image   "docker-entrypoint.s…"   4 seconds ago   Up 3 seconds   0.0.0.0:3000->3000/tcp, [::]:3000->3000/tcp   node-http-app-container
+
+$ curl -s http://localhost:3000/
+Hello from Docker!
+$ curl -s http://localhost:3000/animal
+Elephant
+
+===== Завдання 3. Node.js і змінна оточення =====
+$ find node_env_app -type f | sort
+node_env_app/Dockerfile
+node_env_app/app.js
+node_env_app/package.json
+
+$ cat node_env_app/app.js
+const express = require('express');
+const app = express();
+
+app.get('/', (req, res) => res.send('Welcome to my Docker app'));
+app.get('/config', (req, res) => res.send(process.env.APP_MODE));
+
+app.listen(3000, () => console.log('Server is running on port 3000'));
+
+$ cat node_env_app/Dockerfile
+FROM node:alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+ENV APP_MODE=development
+EXPOSE 3000
+CMD ["node", "app.js"]
+
+$ grep ENV node_env_app/Dockerfile
+ENV APP_MODE=development
+
+$ docker build -t node-env-app-image node_env_app 2>&1 | tail -15
+ ---> c2fb58d35f04
+Step 6/8 : ENV APP_MODE=development
+ ---> Running in 5ddb05d40a29
+ ---> Removed intermediate container 5ddb05d40a29
+ ---> 8ffada36c064
+Step 7/8 : EXPOSE 3000
+ ---> Running in c89edf53ed8f
+ ---> Removed intermediate container c89edf53ed8f
+ ---> c1885f9ec862
+Step 8/8 : CMD ["node", "app.js"]
+ ---> Running in 9f53f862af70
+ ---> Removed intermediate container 9f53f862af70
+ ---> e0d20bc0ebdb
+Successfully built e0d20bc0ebdb
+Successfully tagged node-env-app-image:latest
+
+$ docker run -d --name node-env-app-container -p 3001:3000 node-env-app-image
+38105f46de4d414d2a6cd1bc21b844385b44260875cd8071e3c3d60d0adc9cc3
+
+$ docker ps --filter name=node-env-app-container
+CONTAINER ID   IMAGE                COMMAND                  CREATED         STATUS         PORTS                                         NAMES
+38105f46de4d   node-env-app-image   "docker-entrypoint.s…"   4 seconds ago   Up 3 seconds   0.0.0.0:3001->3000/tcp, [::]:3001->3000/tcp   node-env-app-container
+
+$ curl -s http://localhost:3001/
+Welcome to my Docker app
+$ curl -s http://localhost:3001/config
+development

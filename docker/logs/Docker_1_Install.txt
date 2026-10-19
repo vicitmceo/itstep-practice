@@ -1,0 +1,54 @@
+
+===== Перевірка встановлення Docker =====
+$ docker --version
+Docker version 29.1.3, build 29.1.3-0ubuntu4.1
+
+$ apt-cache policy docker.io | head -5
+docker.io:
+  Installed: 29.1.3-0ubuntu4.1
+  Candidate: 29.1.3-0ubuntu4.1
+  Version table:
+ *** 29.1.3-0ubuntu4.1 500
+
+$ service docker status | head -5
+● docker.service - Docker Application Container Engine
+     Loaded: loaded (/usr/lib/systemd/system/docker.service; enabled; preset: enabled)
+     Active: active (running) since Wed 2026-10-14 18:39:41 MSK; 8min ago
+ Invocation: 31cb439d0729420bb4be458cf9e76b41
+TriggeredBy: ● docker.socket
+
+$ docker info | head -12
+Client:
+ Version:    29.1.3
+ Context:    default
+ Debug Mode: false
+ Plugins:
+  trust: Manage trust on Docker images (Docker Inc.)
+    Version:  29.1.3
+    Path:     /usr/libexec/docker/cli-plugins/docker-trust
+
+Server:
+ Containers: 0
+  Running: 0
+
+$ docker run --rm hello-world | head -4
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+4f55086f7dd0: Pulling fs layer
+4f55086f7dd0: Download complete
+4f55086f7dd0: Pull complete
+d5e71e642bf5: Download complete
+Digest: sha256:11a3eb1597e864c51b3f56733cb2e8a90bf0c284bfc05f9444d81c558bc848aa
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+
+
+Відповіді на питання для закріплення:
+1. Версія в офіційному репозиторії Ubuntu може бути не останньою, тому ставлять з репозиторію Docker.
+   (У цьому середовищі (WSL, Ubuntu 26.04) пакет docker.io з репозиторію Ubuntu вже свіжий, версія 29.x.)
+2. Перший apt update оновлює список пакетів до додавання репозиторію, другий підтягує список пакетів з нового репозиторію.
+3. Перевірити встановлення: docker --version, docker run hello-world, systemctl/service docker status.
+4. Перевірити джерело пакета: apt-cache policy docker-ce.

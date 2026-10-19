@@ -1,0 +1,94 @@
+
+===== Завдання 1. docker search =====
+$ docker search nginx --limit 5
+NAME                                     DESCRIPTION                                     STARS     OFFICIAL
+nginx                                    Official build of Nginx.                        21408     [OK]
+nginx/nginx-ingress                      NGINX and  NGINX Plus Ingress Controllers fo…   124       
+nginx/nginx-prometheus-exporter          NGINX Prometheus Exporter for NGINX and NGIN…   53        
+nginx/nginx-ingress-operator             NGINX Ingress Operator for NGINX and NGINX P…   5         
+nginx/nginxaas-loadbalancer-kubernetes                                                   1         
+
+$ docker search redis --limit 5
+NAME                       DESCRIPTION                                     STARS     OFFICIAL
+redis                      Redis is the world’s fastest data platform f…   13624     [OK]
+redis/redis-stack-server   redis-stack-server installs a Redis server w…   104       
+redis/redis-stack          redis-stack installs a Redis server with add…   164       
+redis/redisinsight         Redis Insight - our best official GUI for Re…   55        
+redislabs/redis            Clustered in-memory database engine compatib…   46        
+
+$ docker search httpd --limit 5
+NAME                     DESCRIPTION                                     STARS     OFFICIAL
+httpd                    The Apache HTTP Server Project                  4932      [OK]
+manageiq/httpd           Container with httpd, built on CentOS for Ma…   1         
+paketobuildpacks/httpd                                                   0         
+vulhub/httpd                                                             0         
+openeuler/httpd                                                          0         
+
+
+===== Завдання 2. Завантаження образів =====
+$ docker pull nginx:alpine
+alpine: Pulling from library/nginx
+Digest: sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
+Status: Image is up to date for nginx:alpine
+docker.io/library/nginx:alpine
+
+$ docker pull redis:alpine
+alpine: Pulling from library/redis
+095940d4ebca: Pulling fs layer
+2f1039339059: Pulling fs layer
+618072543738: Pulling fs layer
+d0c1d894c237: Pulling fs layer
+8c9c3a906635: Pulling fs layer
+d60026184d2e: Pulling fs layer
+4f4fb700ef54: Pulling fs layer
+095940d4ebca: Download complete
+2f1039339059: Download complete
+618072543738: Download complete
+d0c1d894c237: Download complete
+d60026184d2e: Download complete
+4f4fb700ef54: Download complete
+618072543738: Pull complete
+d0c1d894c237: Pull complete
+d60026184d2e: Pull complete
+2ea8415cd7b3: Download complete
+10a82f6a874c: Download complete
+8c9c3a906635: Download complete
+095940d4ebca: Pull complete
+2f1039339059: Pull complete
+4f4fb700ef54: Pull complete
+8c9c3a906635: Pull complete
+Digest: sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0
+Status: Downloaded newer image for redis:alpine
+docker.io/library/redis:alpine
+
+$ docker images
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE                ID             DISK USAGE   CONTENT SIZE   EXTRA
+alpine:latest        294b683cb724         13MB         3.94MB        
+hello-world:latest   11a3eb1597e8       25.9kB         9.49kB   U    
+nginx:alpine         df221db836e1       94.4MB         27.2MB        
+redis:alpine         3811787313eb        161MB         39.6MB        
+
+
+===== Завдання 3. Видалення образів =====
+$ docker rmi redis:alpine
+Untagged: redis:alpine
+Deleted: sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0
+
+$ docker images
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE                ID             DISK USAGE   CONTENT SIZE   EXTRA
+alpine:latest        294b683cb724         13MB         3.94MB        
+hello-world:latest   11a3eb1597e8       25.9kB         9.49kB   U    
+nginx:alpine         df221db836e1       94.4MB         27.2MB        
+
+$ docker rmi nginx:alpine
+Untagged: nginx:alpine
+Deleted: sha256:df221db836e1754089190208cee7eeda94f233197056426eda74a43ab1abeac2
+
+$ docker images
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE                ID             DISK USAGE   CONTENT SIZE   EXTRA
+alpine:latest        294b683cb724         13MB         3.94MB        
+hello-world:latest   11a3eb1597e8       25.9kB         9.49kB   U    
+

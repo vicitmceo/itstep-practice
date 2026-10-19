@@ -1,0 +1,78 @@
+
+===== Список образів =====
+$ docker images
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE                ID             DISK USAGE   CONTENT SIZE   EXTRA
+hello-world:latest   11a3eb1597e8       25.9kB         9.49kB   U    
+
+$ docker images -a
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE                ID             DISK USAGE   CONTENT SIZE   EXTRA
+hello-world:latest   11a3eb1597e8       25.9kB         9.49kB   U    
+
+
+===== Завантажуємо 4 образи alpine =====
+$ docker pull alpine:3.6
+3.6: Pulling from library/alpine
+5a3ea8efae5d: Pulling fs layer
+5a3ea8efae5d: Download complete
+5a3ea8efae5d: Pull complete
+Digest: sha256:66790a2b79e1ea3e1dabac43990c54aca5d1ddf268d9a5a0285e4167c8b24475
+Status: Downloaded newer image for alpine:3.6
+docker.io/library/alpine:3.6
+
+$ docker pull alpine:3.7
+3.7: Pulling from library/alpine
+5d20c808ce19: Pulling fs layer
+5d20c808ce19: Download complete
+5d20c808ce19: Pull complete
+Digest: sha256:8421d9a84432575381bfabd248f1eb56f3aa21d9d7cd2511583c68c9b7511d10
+Status: Downloaded newer image for alpine:3.7
+docker.io/library/alpine:3.7
+
+$ docker pull alpine:3.8
+3.8: Pulling from library/alpine
+486039affc0a: Pulling fs layer
+486039affc0a: Download complete
+486039affc0a: Pull complete
+Digest: sha256:2bb501e6173d9d006e56de5bce2720eb06396803300fe1687b58a7ff32bf4c14
+Status: Downloaded newer image for alpine:3.8
+docker.io/library/alpine:3.8
+
+$ docker pull alpine:3.9
+3.9: Pulling from library/alpine
+31603596830f: Pulling fs layer
+31603596830f: Download complete
+31603596830f: Pull complete
+Digest: sha256:414e0518bb9228d35e4cd5165567fb91d26c6a214e9c95899e1e056fcd349011
+Status: Downloaded newer image for alpine:3.9
+docker.io/library/alpine:3.9
+
+$ docker images
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE                ID             DISK USAGE   CONTENT SIZE   EXTRA
+alpine:3.6           66790a2b79e1       6.58MB         2.02MB        
+alpine:3.7           8421d9a84432       6.86MB         2.11MB        
+alpine:3.8           2bb501e6173d       7.17MB         2.21MB        
+alpine:3.9           414e0518bb92       8.89MB         2.78MB        
+hello-world:latest   11a3eb1597e8       25.9kB         9.49kB   U    
+
+$ docker images --filter=reference='alpine'
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE        ID             DISK USAGE   CONTENT SIZE   EXTRA
+alpine:3.6   66790a2b79e1       6.58MB         2.02MB        
+alpine:3.7   8421d9a84432       6.86MB         2.11MB        
+alpine:3.8   2bb501e6173d       7.17MB         2.21MB        
+alpine:3.9   414e0518bb92       8.89MB         2.78MB        
+
+$ docker images --filter=reference='alpine:3.9'
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE        ID             DISK USAGE   CONTENT SIZE   EXTRA
+alpine:3.9   414e0518bb92       8.89MB         2.78MB        
+
+
+Відповіді на питання:
+1. Усі образи, включно з проміжними: docker images -a.
+2. Завантажити образ без створення контейнера: docker pull.
+3. Розмір і id образу: docker images.
+4. Один конкретний образ за репозиторієм і тегом: docker pull репозиторій:тег (наприклад docker pull alpine:3.9).
